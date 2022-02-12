@@ -1,5 +1,7 @@
 import com.soywiz.klock.seconds
+import com.soywiz.korev.Key
 import com.soywiz.korge.*
+import com.soywiz.korge.input.keys
 import com.soywiz.korge.tween.*
 import com.soywiz.korge.view.*
 import com.soywiz.korim.color.Colors
@@ -19,8 +21,8 @@ suspend fun main() = Korge(
 		width = (leftBorder + rightBorder).toInt(),
 		height = bottomBorder.toInt(),
 		bgcolor = Colors["#2b2b2b"]) {
-	val initialPlayerX = 100.0
-	val initialPlayerY = 100.0
+	val initialPlayerX = 100.0 + leftBorder
+	val initialPlayerY = 100.0 + topBorder
 	val initialPlayerAngle = Angle(0.0)
 
 	/*
@@ -32,11 +34,40 @@ suspend fun main() = Korge(
 		y = 5.0
 	}
 
+
+	/*
+	SET UP GAME AREA
+	 */
 	val player = player(initialPlayerX, initialPlayerY, initialPlayerAngle)
 
 	val asteroid = asteroid(300.0, 300.0)
 
-	val bullet = bullet(100.0, 10.0, initialPlayerAngle)
+	val bullet = bullet(100.0, 40.0, initialPlayerAngle)
+
+
+	/*
+	SET UP INPUT
+	 */
+	keys {
+		down {
+			when (it.key) {
+				Key.UP, Key.W -> basicText.text = "UP pressed"
+				Key.DOWN, Key.S -> basicText.text = "DOWN pressed"
+				Key.LEFT, Key.A -> basicText.text = "LEFT pressed"
+				Key.RIGHT, Key.D -> basicText.text = "RIGHT pressed"
+				Key.SPACE -> basicText.text = "SPACE pressed"
+			}
+		}
+		up {
+			when (it.key) {
+				Key.UP, Key.W -> basicText.text = "UP released"
+				Key.DOWN, Key.S -> basicText.text = "DOWN released"
+				Key.LEFT, Key.A -> basicText.text = "LEFT released"
+				Key.RIGHT, Key.D -> basicText.text = "RIGHT released"
+				Key.SPACE -> basicText.text = "SPACE released"
+			}
+		}
+	}
 }
 
 // Custom DSL functions
