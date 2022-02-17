@@ -25,15 +25,6 @@ suspend fun main() = Korge(
 	val initialPlayerY = 100.0 + topBorder
 	val initialPlayerAngle = Angle(0.0)
 
-	/*
-	SET UP TOP BAR
-	 */
-	solidRect(leftBorder + rightBorder, topBorder, color = Colors.SLATEGRAY)
-	val basicText = text("Placeholder", textSize = topBorder - 10.0, color = Colors.BLUEVIOLET) {
-		x = 5.0
-		y = 5.0
-	}
-
 
 	/*
 	SET UP GAME AREA
@@ -44,6 +35,16 @@ suspend fun main() = Korge(
 
 	val bullet = bullet(100.0, 40.0, initialPlayerAngle)
 
+
+	/*
+	SET UP TOP BAR
+	 */
+	// We do this after other components so that the top bar is on top of everything in terms of layers
+	solidRect(leftBorder + rightBorder, topBorder, color = Colors.SLATEGRAY)
+	val basicText = text("Placeholder", textSize = topBorder - 10.0, color = Colors.BLUEVIOLET) {
+		x = 5.0
+		y = 5.0
+	}
 
 	/*
 	SET UP INPUT
