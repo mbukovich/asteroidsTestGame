@@ -9,8 +9,7 @@ import com.soywiz.korim.color.Colors
 class Asteroid(
         private val initX: Double,
         private val initY: Double,
-        private val velocityXPpS: Double = -10.0,
-        private val velocityYPpS: Double = 5.0
+        val asteroidPhysics: PhysicsComponent = PhysicsComponent()
 ): Container() {
     init {
         circle(30.0, fill = Colors.DARKGRAY) {
@@ -34,8 +33,11 @@ class Asteroid(
             if (y >= (bottomBorder + 30.0)) {
                 yWarp = -bottomBorder - 60 + topBorder
             }
-            x += (velocityXPpS / 60.0) + xWarp
-            y += (velocityYPpS / 60.0) + yWarp
+            // x += (velocityXPpS / 60.0) + xWarp
+            // y += (velocityYPpS / 60.0) + yWarp
+            val changeInPosition =  asteroidPhysics.getChangeInPositionXYCoord((1.0 / 60.0), rotation)
+            x += changeInPosition.x + xWarp
+            y += changeInPosition.y + yWarp
         }
     }
 }

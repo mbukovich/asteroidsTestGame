@@ -31,7 +31,8 @@ suspend fun main() = Korge(
 	 */
 	val player = player(initialPlayerX, initialPlayerY, initialPlayerAngle)
 
-	val asteroid = asteroid(300.0, 300.0)
+	val asteroidPhysics = PhysicsComponent(10000.0, 10.0, 5.0, 100000.0)
+	val asteroid = asteroid(300.0, 300.0, asteroidPhysics)
 
 	val bullet = bullet(100.0, 40.0, initialPlayerAngle)
 
@@ -77,7 +78,10 @@ fun Container.player(
 		initY: Double,
 		initAngle: Angle) = Player(initX, initY, initAngle).addTo(this)
 
-fun Container.asteroid(initX: Double, initY: Double) = Asteroid(initX, initY).addTo(this)
+fun Container.asteroid(
+		initX: Double,
+		initY: Double,
+		physicsComponent: PhysicsComponent) = Asteroid(initX, initY, physicsComponent).addTo(this)
 
 fun Container.bullet(
 		initX: Double,

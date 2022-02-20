@@ -8,13 +8,13 @@ class Player(
         private val initY: Double,
         private val initAngle: Angle): Container() {
     init {
-        solidRect(30, 10, color = Colors.DEEPSKYBLUE) {
-            x = -15.0
-            y = 10.0
-        }
         solidRect(10, 30, color = Colors.DEEPSKYBLUE) {
-            x = -5.0
+            x = -20.0
             y = -15.0
+        }
+        solidRect(30, 10, color = Colors.DEEPSKYBLUE) {
+            x = -10.0
+            y = -5.0
         }
         x = initX
         y = initY
