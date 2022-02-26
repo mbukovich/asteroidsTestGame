@@ -1,6 +1,10 @@
+import com.soywiz.klock.TimeSpan
+import com.soywiz.korio.async.delay
+import com.soywiz.korio.async.launch
 import com.soywiz.korma.geom.Angle
 import com.soywiz.korma.geom.cosine
 import com.soywiz.korma.geom.sine
+import kotlin.coroutines.CoroutineContext
 import kotlin.math.atan
 import kotlin.math.sqrt
 
@@ -9,13 +13,33 @@ class PhysicsComponent(
         var velocityXPpS: Double = 0.0,
         var velocityYPpS: Double = 0.0,
         var momentOfInertiaKgM2: Double = 100.0,
-        var angularVelPosRpS: Double = 0.0,
-        var angularVelNegRpS: Double = 0.0,
+        var angularVelRpS: Double = 0.0,
         var pixelToMeter: Double = 1.0,
+        val speedLimitPpS: Double = 1000.0,
+        val rotationalSpeedLimitRpS: Double = 1000.0,
         val forces: MutableList<Force> = mutableListOf(),
-        val torques: MutableList<Torque> = mutableListOf()) {
+        val torques: MutableList<Torque> = mutableListOf(),
+        var requireUniqueForce: Boolean = true) {
     fun applyForce(force: Force) {
-        forces.add(force)
+        if (requireUniqueForce) {
+            if (!forces.contains(force))
+                forces.add(force)
+        }
+        else
+            forces.add(force)
+    }
+
+    fun applyForceForTime(context: CoroutineContext, force: Force, time: TimeSpan) {
+        launch(context) {
+            if (requireUniqueForce) {
+                if (!forces.contains(force))
+                    forces.add(force)
+            }
+            else
+                forces.add(force)
+            delay(time)
+            forces.remove(force)
+        }
     }
 
     fun removeForce(force: Force) {
@@ -24,12 +48,30 @@ class PhysicsComponent(
     }
 
     fun applyTorque(torque: Torque) {
-        torques.add(torque)
+        if (requireUniqueForce) {
+            if (!torques.contains(torque))
+                torques.add(torque)
+        }
+        else
+            torques.add(torque)
     }
 
     fun removeTorque(torque: Torque) {
         if (torques.contains(torque))
             torques.remove(torque)
+    }
+
+    fun applyTorqueForTime(context: CoroutineContext, torque: Torque, time: TimeSpan) {
+        launch(context) {
+            if (requireUniqueForce) {
+                if (!torques.contains(torque))
+                    torques.add(torque)
+            }
+            else
+                torques.add(torque)
+            delay(time)
+            torques.remove(torque)
+        }
     }
 
     fun getChangeInPositionXYCoord(dt: Double, globalDirection: Angle, updateVelocity: Boolean = true): XYCoord {
@@ -39,11 +81,19 @@ class PhysicsComponent(
             xAccel += it.getForceXGlobal(globalDirection) / massKg
             yAccel += it.getForceYGlobal(globalDirection) / massKg
         }
-        val newX = ((velocityXPpS * dt) + (0.5 * xAccel * dt * dt))
-        val newY = ((velocityYPpS * dt) + (0.5 * yAccel * dt * dt))
-        if (updateVelocity) {
-            velocityXPpS += xAccel * dt
-            velocityYPpS += yAccel * dt
+        val newXVelocity = velocityXPpS + xAccel * dt
+        val newYVelocity = velocityYPpS + yAccel * dt
+        var newX = 0.0
+        var newY = 0.0
+        if (sqrt(newXVelocity * newXVelocity + newYVelocity * newYVelocity) <= speedLimitPpS) {
+            newX = (velocityXPpS * dt) + 0.5 * xAccel * dt * dt
+            newY = (velocityYPpS * dt) + 0.5 * yAccel * dt * dt
+            velocityXPpS = newXVelocity
+            velocityYPpS = newYVelocity
+        }
+        else {
+            newX = velocityXPpS * dt
+            newY = velocityYPpS * dt
         }
         return XYCoord(newX, newY)
     }
@@ -55,8 +105,58 @@ class PhysicsComponent(
             xAccel += it.getForceXGlobal(globalDirection) / massKg
             yAccel += it.getForceYGlobal(globalDirection) / massKg
         }
-        velocityXPpS += xAccel * dt
-        velocityYPpS += yAccel * dt
+        val newXVelocity = velocityXPpS + xAccel * dt
+        val newYVelocity = velocityYPpS + yAccel * dt
+        if (sqrt(newXVelocity * newXVelocity + newYVelocity * newYVelocity) <= speedLimitPpS) {
+            velocityXPpS = newXVelocity
+            velocityYPpS = newYVelocity
+        }
+    }
+
+    fun getChangeInDirection(dt: Double, updateVelocity: Boolean = true): Angle {
+        var rotationalAccel = 0.0
+        torques.forEach {
+            rotationalAccel += if (it.isPos)
+                it.magnitudeKgPPpSS / momentOfInertiaKgM2
+            else
+                -1 * it.magnitudeKgPPpSS / momentOfInertiaKgM2
+        }
+        // We also factor in the torque due to forces on the object
+        forces.forEach {
+            rotationalAccel += if (it.localTorque.isPos)
+                it.localTorque.magnitudeKgPPpSS / momentOfInertiaKgM2
+            else
+                -1 * it.localTorque.magnitudeKgPPpSS / momentOfInertiaKgM2
+        }
+        var newRadians = 0.0
+        val newAngularVelocity = angularVelRpS + rotationalAccel * dt
+        if ((-1 * rotationalSpeedLimitRpS) <= newAngularVelocity && newAngularVelocity <= rotationalSpeedLimitRpS) {
+            newRadians = (angularVelRpS * dt) + 0.5 * rotationalAccel * dt * dt
+            angularVelRpS = newAngularVelocity
+        }
+        else {
+            newRadians = angularVelRpS * dt
+        }
+        return Angle(newRadians)
+    }
+
+    fun updateRotationalVelocity(dt: Double) {
+        var rotationalAccel = 0.0
+        torques.forEach {
+            rotationalAccel += if (it.isPos)
+                it.magnitudeKgPPpSS / momentOfInertiaKgM2
+            else
+                -1 * it.magnitudeKgPPpSS / momentOfInertiaKgM2
+        }
+        // We also factor in the torque due to forces on the object
+        forces.forEach {
+            rotationalAccel += if (it.localTorque.isPos)
+                it.localTorque.magnitudeKgPPpSS / momentOfInertiaKgM2
+            else
+                -1 * it.localTorque.magnitudeKgPPpSS / momentOfInertiaKgM2
+        }
+        if ((-1.0 * rotationalSpeedLimitRpS) <= (angularVelRpS + rotationalAccel * dt) && (angularVelRpS + rotationalAccel * dt) <= rotationalSpeedLimitRpS)
+            angularVelRpS += rotationalAccel * dt
     }
 }
 
@@ -65,15 +165,36 @@ class XYCoord(val x: Double = 0.0, val y: Double = 0.0)
 class Force(
         val isForceLocal: Boolean = false,
         var magnitude: Double = 0.0,
-        var direction: Angle = Angle(0.0)) {
+        var direction: Angle = Angle(0.0),
+        var localX: Double = 0.0,
+        var localY: Double = 0.0,) {
+    var localTorque = Torque()
+
     fun setForceByXandY(xForceKgPpSS: Double, yForceKgPpSS: Double) {
         magnitude = sqrt((xForceKgPpSS * xForceKgPpSS) + (yForceKgPpSS * yForceKgPpSS))
         direction = Angle(atan(yForceKgPpSS/xForceKgPpSS))
+        // Adjust the torque due to the force as well if the force is offset
+        if (localX != 0.0 && localY != 0.0)
+            setLocalTorqueByXY(xForceKgPpSS, yForceKgPpSS)
     }
 
     fun setForceByMagnitudeAndAngle(mag: Double, angle: Angle) {
         magnitude = mag
         direction = angle
+        // Adjust the torque due to the force as well if the force is offset
+        if (localX != 0.0 && localY != 0.0) {
+            setLocalTorqueByXY(getForceX(), getForceY())
+        }
+    }
+
+    fun setLocalTorqueByXY(xForceKgPpSS: Double, yForceKgPpSS: Double) {
+        localTorque.magnitudeKgPPpSS = (localX * yForceKgPpSS) + (-1.0 * localY * xForceKgPpSS)
+        if (localTorque.magnitudeKgPPpSS < 0.0) {
+            localTorque.magnitudeKgPPpSS *= -1.0
+            localTorque.isPos = false
+        }
+        else
+            localTorque.isPos = true
     }
 
     fun adjustMagnitude(increaseKgPpSS: Double) {

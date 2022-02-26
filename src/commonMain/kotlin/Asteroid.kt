@@ -28,7 +28,7 @@ class Asteroid(
                 xWarp = -rightBorder - 60
             }
             if (y <= (topBorder - 30.0)) {
-                yWarp = bottomBorder + 60
+                yWarp = bottomBorder - topBorder + 60
             }
             if (y >= (bottomBorder + 30.0)) {
                 yWarp = -bottomBorder - 60 + topBorder

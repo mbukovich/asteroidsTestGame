@@ -29,7 +29,8 @@ suspend fun main() = Korge(
 	/*
 	SET UP GAME AREA
 	 */
-	val player = player(initialPlayerX, initialPlayerY, initialPlayerAngle)
+	val playerPhysics = PhysicsComponent(massKg = 1000.0, momentOfInertiaKgM2 = 10000.0, speedLimitPpS = 200.0)
+	val player = player(initialPlayerX, initialPlayerY, initialPlayerAngle, playerPhysics)
 
 	val asteroidPhysics = PhysicsComponent(10000.0, 10.0, 5.0, 100000.0)
 	val asteroid = asteroid(300.0, 300.0, asteroidPhysics)
@@ -53,19 +54,37 @@ suspend fun main() = Korge(
 	keys {
 		down {
 			when (it.key) {
-				Key.UP, Key.W -> basicText.text = "UP pressed"
+				Key.UP, Key.W -> {
+					basicText.text = "UP pressed"
+					player.accelerateDown()
+				}
 				Key.DOWN, Key.S -> basicText.text = "DOWN pressed"
-				Key.LEFT, Key.A -> basicText.text = "LEFT pressed"
-				Key.RIGHT, Key.D -> basicText.text = "RIGHT pressed"
+				Key.LEFT, Key.A -> {
+					basicText.text = "LEFT pressed"
+					player.turnLeftDown()
+				}
+				Key.RIGHT, Key.D -> {
+					basicText.text = "RIGHT pressed"
+					player.turnRightDown()
+				}
 				Key.SPACE -> basicText.text = "SPACE pressed"
 			}
 		}
 		up {
 			when (it.key) {
-				Key.UP, Key.W -> basicText.text = "UP released"
+				Key.UP, Key.W -> {
+					basicText.text = "UP released"
+					player.accelerateUp()
+				}
 				Key.DOWN, Key.S -> basicText.text = "DOWN released"
-				Key.LEFT, Key.A -> basicText.text = "LEFT released"
-				Key.RIGHT, Key.D -> basicText.text = "RIGHT released"
+				Key.LEFT, Key.A -> {
+					basicText.text = "LEFT released"
+					player.turnLeftUp()
+				}
+				Key.RIGHT, Key.D -> {
+					basicText.text = "RIGHT released"
+					player.turnRightUp()
+				}
 				Key.SPACE -> basicText.text = "SPACE released"
 			}
 		}
@@ -76,7 +95,8 @@ suspend fun main() = Korge(
 fun Container.player(
 		initX: Double,
 		initY: Double,
-		initAngle: Angle) = Player(initX, initY, initAngle).addTo(this)
+		initAngle: Angle,
+		physicsComponent: PhysicsComponent) = Player(initX, initY, initAngle, physicsComponent).addTo(this)
 
 fun Container.asteroid(
 		initX: Double,
