@@ -78,11 +78,11 @@ suspend fun main() = Korge(
 				}
 				Key.DOWN, Key.S -> basicText.text = "DOWN released"
 				Key.LEFT, Key.A -> {
-					basicText.text = "LEFT released"
+					basicText.text = "LEFT released. Radians: " + player.rotation.radians.toString()
 					player.turnLeftUp()
 				}
 				Key.RIGHT, Key.D -> {
-					basicText.text = "RIGHT released"
+					basicText.text = "RIGHT released. Radians: " + player.rotation.radians.toString()
 					player.turnRightUp()
 				}
 				Key.SPACE -> basicText.text = "SPACE released"
