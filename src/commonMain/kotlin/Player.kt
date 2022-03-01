@@ -47,7 +47,7 @@ class Player(
             rotation = Angle(updatedRotationalVelocity)
         }
     }
-    val thrusterForce = Force(true, 100000.0)
+    val thrusterForce = Force(true, 200000.0)
 
     fun accelerateDown() {
         physicsComponent.applyForce(thrusterForce)

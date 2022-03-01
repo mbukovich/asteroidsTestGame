@@ -5,6 +5,7 @@ import com.soywiz.korma.geom.Angle
 import com.soywiz.korma.geom.cosine
 import com.soywiz.korma.geom.sine
 import kotlin.coroutines.CoroutineContext
+import kotlin.math.PI
 import kotlin.math.atan
 import kotlin.math.sqrt
 
@@ -81,9 +82,36 @@ class PhysicsComponent(
             xAccel += it.getForceXGlobal(globalDirection) / massKg
             yAccel += it.getForceYGlobal(globalDirection) / massKg
         }
-        val newXVelocity = velocityXPpS + xAccel * dt
-        val newYVelocity = velocityYPpS + yAccel * dt
-        var newX = 0.0
+        var newXVelocity = velocityXPpS + xAccel * dt
+        var newYVelocity = velocityYPpS + yAccel * dt
+        if (sqrt(newXVelocity * newXVelocity + newYVelocity * newYVelocity) > speedLimitPpS){
+            val accelDirectionRadians = correctForArcTan(xAccel, yAccel, atan(yAccel/xAccel))
+            val velocityDirectionRadians = correctForArcTan(velocityXPpS, velocityYPpS, atan(velocityYPpS/velocityXPpS))
+            val angleDifference = velocityDirectionRadians - accelDirectionRadians
+            if (angleDifference != 0.0) {
+                var angleAdjustment = PI / 2.0
+                val accelMagnitude = sqrt((xAccel * xAccel) + (yAccel * yAccel))
+                if (angleDifference <= (PI / -2.0)) {
+                    // In this case, the acceleration direction is in the fourth quadrant and velocity direction is in the first quadrant.
+                    // Accel angle needs to decrease by PI / 2 radians
+                    angleAdjustment *= -1.0
+                }
+                else if (velocityDirectionRadians > accelDirectionRadians && angleDifference <= (PI / 2.0))
+                    angleAdjustment *= -1.0
+                xAccel = accelMagnitude * Angle(accelDirectionRadians + angleAdjustment).cosine
+                yAccel = accelMagnitude * Angle(accelDirectionRadians + angleAdjustment).sine
+                newXVelocity = velocityXPpS + xAccel * dt
+                newYVelocity = velocityYPpS + yAccel * dt
+            }
+            else {
+                // In this case, the user is just accelerating in the direction of the speed limit
+                xAccel = 0.0
+                yAccel = 0.0
+                newXVelocity = velocityXPpS
+                newYVelocity = velocityYPpS
+            }
+        }
+        /*var newX = 0.0
         var newY = 0.0
         if (sqrt(newXVelocity * newXVelocity + newYVelocity * newYVelocity) <= speedLimitPpS) {
             newX = (velocityXPpS * dt) + 0.5 * xAccel * dt * dt
@@ -94,7 +122,11 @@ class PhysicsComponent(
         else {
             newX = velocityXPpS * dt
             newY = velocityYPpS * dt
-        }
+        }*/
+        val newX = (velocityXPpS * dt) + 0.5 * xAccel * dt * dt
+        val newY = (velocityYPpS * dt) + 0.5 * yAccel * dt * dt
+        velocityXPpS = newXVelocity
+        velocityYPpS = newYVelocity
         return XYCoord(newX, newY)
     }
 
@@ -172,7 +204,7 @@ class Force(
 
     fun setForceByXandY(xForceKgPpSS: Double, yForceKgPpSS: Double) {
         magnitude = sqrt((xForceKgPpSS * xForceKgPpSS) + (yForceKgPpSS * yForceKgPpSS))
-        direction = Angle(atan(yForceKgPpSS/xForceKgPpSS))
+        direction = Angle(correctForArcTan(xForceKgPpSS, yForceKgPpSS, atan(yForceKgPpSS/xForceKgPpSS)))
         // Adjust the torque due to the force as well if the force is offset
         if (localX != 0.0 && localY != 0.0)
             setLocalTorqueByXY(xForceKgPpSS, yForceKgPpSS)
@@ -263,5 +295,56 @@ class Torque(var magnitudeKgPPpSS: Double = 0.0, var isPos: Boolean = true) {
 
     fun setDirection(isPositiveDir: Boolean) {
         isPos = isPositiveDir
+    }
+}
+
+fun correctForArcTan(x: Double, y: Double, angleRadians: Double): Double {
+    if (y > 0.0) {
+        if (x > 0.0) {
+            // Positive X and Positive Y
+            // This is the first quadrant from 0 to PIE/2. this case the angle from the atan Kotlin function will be accurate
+            return angleRadians
+        }
+        else if (x < 0.0) {
+            // Negative X and Positive Y
+            // this is the second quadrant where the Kotlin atan function gives the angle going in a negative direction from PIE radians
+            return PI + angleRadians
+        }
+        else {
+            // Zero X and Positive Y
+            // The angle is PIE/2 in this case
+            return PI / 2.0
+        }
+    }
+    else if (y < 0.0) {
+        if (x < 0.0) {
+            // Negative X and Negative Y
+            // This is the third quadrant where the Kotlin atan function gives a positive angular distance from PIE
+            return PI + angleRadians
+        }
+        else if (x > 0.0) {
+            // Positive X and Negative Y
+            // This is the fourth quadrant where the Kotlin atan function gives a negative angle representing the angular distance from 2 * PIE
+            return 2.0 * PI + angleRadians
+        }
+        else {
+            // Zero X and Negative Y
+            // In this case, the angle is PIE * 1.5
+            return PI * 1.5
+        }
+    }
+    else {
+        if (x < 0.0) {
+            // Negative X and zero Y
+            return PI
+        }
+        else if (x > 0.0) {
+            // Positive X and zero Y
+            return 0.0
+        }
+        else {
+            // zero X and zero Y
+            return 0.0
+        }
     }
 }

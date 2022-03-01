@@ -8,8 +8,11 @@ import com.soywiz.korim.color.Colors
 import com.soywiz.korim.format.*
 import com.soywiz.korio.file.std.*
 import com.soywiz.korma.geom.Angle
+import com.soywiz.korma.geom.cosine
 import com.soywiz.korma.geom.degrees
+import com.soywiz.korma.geom.sine
 import com.soywiz.korma.interpolation.Easing
+import kotlin.math.atan
 
 // Initial Stage Dimensions
 val topBorder = 30.0
@@ -78,11 +81,11 @@ suspend fun main() = Korge(
 				}
 				Key.DOWN, Key.S -> basicText.text = "DOWN released"
 				Key.LEFT, Key.A -> {
-					basicText.text = "LEFT released. Radians: " + player.rotation.radians.toString()
+					basicText.text = "LEFT released. Radians: " + atan(player.rotation.sine/player.rotation.cosine).toString()
 					player.turnLeftUp()
 				}
 				Key.RIGHT, Key.D -> {
-					basicText.text = "RIGHT released. Radians: " + player.rotation.radians.toString()
+					basicText.text = "RIGHT released. Radians: " + atan(player.rotation.sine/player.rotation.cosine).toString()
 					player.turnRightUp()
 				}
 				Key.SPACE -> basicText.text = "SPACE released"
