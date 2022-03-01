@@ -20,6 +20,8 @@ val leftBorder = 0.0
 val rightBorder = 512.0
 val bottomBorder = 512.0 + topBorder
 
+var bulletFired = false
+
 suspend fun main() = Korge(
 		width = (leftBorder + rightBorder).toInt(),
 		height = bottomBorder.toInt(),
@@ -37,8 +39,6 @@ suspend fun main() = Korge(
 
 	val asteroidPhysics = PhysicsComponent(10000.0, 10.0, 5.0, 100000.0)
 	val asteroid = asteroid(300.0, 300.0, asteroidPhysics)
-
-	val bullet = bullet(100.0, 40.0, initialPlayerAngle)
 
 
 	/*
@@ -70,7 +70,19 @@ suspend fun main() = Korge(
 					basicText.text = "RIGHT pressed"
 					player.turnRightDown()
 				}
-				Key.SPACE -> basicText.text = "SPACE pressed"
+				Key.SPACE -> {
+					basicText.text = "SPACE pressed"
+					if (!bulletFired) {
+						bulletFired = true
+						val initialX = player.x + (23.5 * player.rotation.cosine)
+						val initialY = player.y + (23.5 * player.rotation.sine)
+						val bulletPhysicsComponent = PhysicsComponent(
+								massKg = 100.0,
+								velocityXPpS = (550.0 * player.rotation.cosine),
+								velocityYPpS = (550.0 * player.rotation.sine))
+						bullet(initX = initialX, initY = initialY, initAngle = player.rotation, physicsComponent = bulletPhysicsComponent)
+					}
+				}
 			}
 		}
 		up {
@@ -88,7 +100,10 @@ suspend fun main() = Korge(
 					basicText.text = "RIGHT released. Radians: " + atan(player.rotation.sine/player.rotation.cosine).toString()
 					player.turnRightUp()
 				}
-				Key.SPACE -> basicText.text = "SPACE released"
+				Key.SPACE -> {
+					basicText.text = "SPACE released"
+					bulletFired = false
+				}
 			}
 		}
 	}
@@ -109,4 +124,5 @@ fun Container.asteroid(
 fun Container.bullet(
 		initX: Double,
 		initY: Double,
-		initAngle: Angle) = Bullet(initX, initY, initAngle).addTo(this)
+		initAngle: Angle,
+		physicsComponent: PhysicsComponent) = Bullet(initX, initY, initAngle, physicsComponent).addTo(this)

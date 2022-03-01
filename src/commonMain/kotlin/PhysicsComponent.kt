@@ -111,22 +111,12 @@ class PhysicsComponent(
                 newYVelocity = velocityYPpS
             }
         }
-        /*var newX = 0.0
-        var newY = 0.0
-        if (sqrt(newXVelocity * newXVelocity + newYVelocity * newYVelocity) <= speedLimitPpS) {
-            newX = (velocityXPpS * dt) + 0.5 * xAccel * dt * dt
-            newY = (velocityYPpS * dt) + 0.5 * yAccel * dt * dt
+        val newX = (velocityXPpS * dt) + 0.5 * xAccel * dt * dt
+        val newY = (velocityYPpS * dt) + 0.5 * yAccel * dt * dt
+        if (updateVelocity) {
             velocityXPpS = newXVelocity
             velocityYPpS = newYVelocity
         }
-        else {
-            newX = velocityXPpS * dt
-            newY = velocityYPpS * dt
-        }*/
-        val newX = (velocityXPpS * dt) + 0.5 * xAccel * dt * dt
-        val newY = (velocityYPpS * dt) + 0.5 * yAccel * dt * dt
-        velocityXPpS = newXVelocity
-        velocityYPpS = newYVelocity
         return XYCoord(newX, newY)
     }
 
@@ -137,12 +127,37 @@ class PhysicsComponent(
             xAccel += it.getForceXGlobal(globalDirection) / massKg
             yAccel += it.getForceYGlobal(globalDirection) / massKg
         }
-        val newXVelocity = velocityXPpS + xAccel * dt
-        val newYVelocity = velocityYPpS + yAccel * dt
-        if (sqrt(newXVelocity * newXVelocity + newYVelocity * newYVelocity) <= speedLimitPpS) {
-            velocityXPpS = newXVelocity
-            velocityYPpS = newYVelocity
+        var newXVelocity = velocityXPpS + xAccel * dt
+        var newYVelocity = velocityYPpS + yAccel * dt
+        if (sqrt(newXVelocity * newXVelocity + newYVelocity * newYVelocity) > speedLimitPpS){
+            val accelDirectionRadians = correctForArcTan(xAccel, yAccel, atan(yAccel/xAccel))
+            val velocityDirectionRadians = correctForArcTan(velocityXPpS, velocityYPpS, atan(velocityYPpS/velocityXPpS))
+            val angleDifference = velocityDirectionRadians - accelDirectionRadians
+            if (angleDifference != 0.0) {
+                var angleAdjustment = PI / 2.0
+                val accelMagnitude = sqrt((xAccel * xAccel) + (yAccel * yAccel))
+                if (angleDifference <= (PI / -2.0)) {
+                    // In this case, the acceleration direction is in the fourth quadrant and velocity direction is in the first quadrant.
+                    // Accel angle needs to decrease by PI / 2 radians
+                    angleAdjustment *= -1.0
+                }
+                else if (velocityDirectionRadians > accelDirectionRadians && angleDifference <= (PI / 2.0))
+                    angleAdjustment *= -1.0
+                xAccel = accelMagnitude * Angle(accelDirectionRadians + angleAdjustment).cosine
+                yAccel = accelMagnitude * Angle(accelDirectionRadians + angleAdjustment).sine
+                newXVelocity = velocityXPpS + xAccel * dt
+                newYVelocity = velocityYPpS + yAccel * dt
+            }
+            else {
+                // In this case, the user is just accelerating in the direction of the speed limit
+                xAccel = 0.0
+                yAccel = 0.0
+                newXVelocity = velocityXPpS
+                newYVelocity = velocityYPpS
+            }
         }
+        velocityXPpS = newXVelocity
+        velocityYPpS = newYVelocity
     }
 
     fun getChangeInDirection(dt: Double, updateVelocity: Boolean = true): Angle {
