@@ -1,9 +1,7 @@
 import com.soywiz.klock.milliseconds
 import com.soywiz.klock.timesPerSecond
 import com.soywiz.korge.tween.tween
-import com.soywiz.korge.view.Container
-import com.soywiz.korge.view.addFixedUpdater
-import com.soywiz.korge.view.circle
+import com.soywiz.korge.view.*
 import com.soywiz.korim.color.Colors
 
 class Asteroid(
@@ -12,12 +10,16 @@ class Asteroid(
         val asteroidPhysics: PhysicsComponent = PhysicsComponent()
 ): Container() {
     init {
-        circle(30.0, fill = Colors.DARKGRAY) {
+        val asteroidcircle = circle(30.0, fill = Colors.DARKGRAY) {
             x = -30.0
             y = -30.0
         }
         x = initX
         y = initY
+        asteroidcircle.onCollision (filter = {it != this && it != this.parent && it != topBar && it != basicText}) {
+            it.removeFromParent()
+            this.removeFromParent()
+        }
         addFixedUpdater(timesPerSecond = 60.timesPerSecond) {
             var xWarp: Double = 0.0
             var yWarp: Double = 0.0

@@ -22,6 +22,9 @@ val bottomBorder = 512.0 + topBorder
 
 var bulletFired = false
 
+val topBar: SolidRect = SolidRect(leftBorder + rightBorder, topBorder, color = Colors.SLATEGRAY)
+val basicText = Text("Placeholder", textSize = topBorder - 10.0, color = Colors.BLUEVIOLET)
+
 suspend fun main() = Korge(
 		width = (leftBorder + rightBorder).toInt(),
 		height = bottomBorder.toInt(),
@@ -46,10 +49,10 @@ suspend fun main() = Korge(
 	 */
 	// We do this after other components so that the top bar is on top of everything in terms of layers
 	solidRect(leftBorder + rightBorder, topBorder, color = Colors.SLATEGRAY)
-	val basicText = text("Placeholder", textSize = topBorder - 10.0, color = Colors.BLUEVIOLET) {
-		x = 5.0
-		y = 5.0
-	}
+	this.addChild(topBar)
+	this.addChild(basicText)
+	basicText.x = 5.0
+	basicText.y = 5.0
 
 	/*
 	SET UP INPUT

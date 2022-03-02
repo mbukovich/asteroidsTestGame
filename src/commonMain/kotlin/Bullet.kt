@@ -1,9 +1,7 @@
-import com.soywiz.korge.view.Container
-import com.soywiz.korge.view.addFixedUpdater
-import com.soywiz.korge.view.ellipse
 import com.soywiz.korim.color.Colors
 import com.soywiz.korma.geom.Angle
 import com.soywiz.klock.timesPerSecond
+import com.soywiz.korge.view.*
 
 class Bullet(
         private val initX: Double,
@@ -11,10 +9,14 @@ class Bullet(
         private val initAngle: Angle,
         val physicsComponent: PhysicsComponent = PhysicsComponent()): Container() {
             init {
-                ellipse(7.0, 3.0, fill = Colors.GREEN) {
+                val bulletView = ellipse(7.0, 3.0, fill = Colors.GREEN) {
                     x = -3.5
                     y = -1.5
                 }
+                /*bulletView.onCollisionShape (filter = {it != this && it != this.parent && it != topBar && it != basicText}) {
+                    it.removeFromParent()
+                    this.removeFromParent()
+                }*/
                 x = initX
                 y = initY
                 rotation = initAngle
