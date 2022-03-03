@@ -13,6 +13,8 @@ import com.soywiz.korma.geom.degrees
 import com.soywiz.korma.geom.sine
 import com.soywiz.korma.interpolation.Easing
 import kotlin.math.atan
+import kotlin.random.Random
+import com.soywiz.klock.timesPerSecond
 
 // Initial Stage Dimensions
 val topBorder = 30.0
@@ -38,10 +40,10 @@ suspend fun main() = Korge(
 	SET UP GAME AREA
 	 */
 	val playerPhysics = PhysicsComponent(massKg = 1000.0, momentOfInertiaKgM2 = 10000.0, speedLimitPpS = 200.0)
-	val player = player(initialPlayerX, initialPlayerY, initialPlayerAngle, playerPhysics)
+	val player = player(initialPlayerX, initialPlayerY, initialPlayerAngle, playerPhysics)Random
 
-	val asteroidPhysics = PhysicsComponent(10000.0, 10.0, 5.0, 100000.0)
-	val asteroid = asteroid(300.0, 300.0, asteroidPhysics)
+	/*val asteroidPhysics = PhysicsComponent(10000.0, 10.0, 5.0, 100000.0)
+	val asteroid = asteroid(30.0, 300.0, 300.0, asteroidPhysics)*/
 
 
 	/*
@@ -110,6 +112,84 @@ suspend fun main() = Korge(
 			}
 		}
 	}
+
+	addFixedUpdater(timesPerSecond = 0.25.timesPerSecond) {
+		randomlyAddAsteroid(player.x, player.y)
+	}
+}
+
+fun Container.randomlyAddAsteroid(playerX: Double, playerY: Double) {
+	// Items to be randomly generated: which of the four borders to spawn from, specific spawning location, initial velocity, radius
+	// The spawning location and which of the four borders can be combined into the same random calculation.
+	// An asteroid shouldn't spawn too close to the player
+	val randomPos = Random.nextDouble(4.0) // the random number that will determine the spawning location of the
+	val randomXVelocity = Random.nextDouble(5.0)
+	val randomYVelocity = Random.nextDouble(5.0)
+	val randomRadius = Random.nextDouble(20.0)
+	if (randomPos < 1.0) {
+		// Starting from left border
+		var asteroidY = ((bottomBorder - topBorder) * randomPos) + topBorder
+		val playerAsteroidDiff = playerY - asteroidY
+		if (-150.0 < playerAsteroidDiff && playerAsteroidDiff < 150.0) {
+			if (asteroidY > (bottomBorder - topBorder) / 2.0)
+				asteroidY -= (bottomBorder - topBorder) / 2.0
+			else
+				asteroidY += (bottomBorder - topBorder) / 2.0
+		}
+		asteroid(
+				randomRadius + 20.0,
+				leftBorder - 30.0,
+				asteroidY,
+				PhysicsComponent((10000.0 * (randomRadius + 40.0) / 30.0), randomXVelocity * randomXVelocity, randomYVelocity * randomYVelocity))
+	}
+	else if (1.0 <= randomPos && randomPos < 2.0) {
+		// Starting from top border
+		var asteroidX = rightBorder * (randomPos - 1.0)
+		val playerAsteroidDiff = playerX - asteroidX
+		if (-150.0 < playerAsteroidDiff && playerAsteroidDiff < 150.0) {
+			if (asteroidX > rightBorder / 2.0)
+				asteroidX -= rightBorder / 2.0
+			else
+				asteroidX += rightBorder / 2.0
+		}
+		asteroid(
+				randomRadius + 20.0,
+				asteroidX,
+				topBorder - 30.0,
+				PhysicsComponent((10000.0 * (randomRadius + 40.0) / 30.0), randomXVelocity * randomXVelocity, randomYVelocity * randomYVelocity))
+	}
+	else if (2.0 <= randomPos && randomPos < 3.0) {
+		// Starting from right border
+		var asteroidY = (bottomBorder - topBorder) * (randomPos - 2.0) + topBorder
+		val playerAsteroidDiff = playerY - asteroidY
+		if (-150.0 < playerAsteroidDiff && playerAsteroidDiff < 150.0) {
+			if (asteroidY > (bottomBorder - topBorder) / 2.0)
+				asteroidY -= (bottomBorder - topBorder) / 2.0
+			else
+				asteroidY += (bottomBorder - topBorder) / 2.0
+		}
+		asteroid(
+				randomRadius + 20.0,
+				rightBorder + 30.0,
+				asteroidY,
+				PhysicsComponent((10000.0 * (randomRadius + 40.0) / 30.0), randomXVelocity * randomXVelocity, randomYVelocity * randomYVelocity))
+	}
+	else {
+		// Starting from bottom border
+		var asteroidX = rightBorder * (randomPos - 3.0)
+		val playerAsteroidDiff = playerX - asteroidX
+		if (-150.0 < playerAsteroidDiff && playerAsteroidDiff < 150.0) {
+			if (asteroidX > rightBorder / 2.0)
+				asteroidX -= rightBorder / 2.0
+			else
+				asteroidX += rightBorder / 2.0
+		}
+		asteroid(
+				randomRadius + 20.0,
+				rightBorder * (randomPos - 3.0),
+				bottomBorder + 30.0,
+				PhysicsComponent((10000.0 * (randomRadius + 40.0) / 30.0), randomXVelocity * randomXVelocity, randomYVelocity * randomYVelocity))
+	}
 }
 
 // Custom DSL functions
@@ -120,9 +200,10 @@ fun Container.player(
 		physicsComponent: PhysicsComponent) = Player(initX, initY, initAngle, physicsComponent).addTo(this)
 
 fun Container.asteroid(
+		asteroidRadius: Double,
 		initX: Double,
 		initY: Double,
-		physicsComponent: PhysicsComponent) = Asteroid(initX, initY, physicsComponent).addTo(this)
+		physicsComponent: PhysicsComponent) = Asteroid(asteroidRadius, initX, initY, physicsComponent).addTo(this)
 
 fun Container.bullet(
 		initX: Double,

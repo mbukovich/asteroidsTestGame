@@ -5,20 +5,22 @@ import com.soywiz.korge.view.*
 import com.soywiz.korim.color.Colors
 
 class Asteroid(
+        private val radius: Double = 30.0,
         private val initX: Double,
         private val initY: Double,
         val asteroidPhysics: PhysicsComponent = PhysicsComponent()
 ): Container() {
     init {
-        val asteroidcircle = circle(30.0, fill = Colors.DARKGRAY) {
+        val asteroidCircle = circle(radius, fill = Colors.DARKGRAY) {
             x = -30.0
             y = -30.0
         }
         x = initX
         y = initY
-        asteroidcircle.onCollision (filter = {it != this && it != this.parent && it != topBar && it != basicText}) {
+        asteroidCircle.onCollision (filter = {it != this && it != this.parent && it != topBar && it != basicText}) {
             it.removeFromParent()
             this.removeFromParent()
+            this.parent?.removeFromParent()
         }
         addFixedUpdater(timesPerSecond = 60.timesPerSecond) {
             var xWarp: Double = 0.0
